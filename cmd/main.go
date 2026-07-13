@@ -8,7 +8,7 @@ import (
 	"ridesafe/server"
 	"syscall"
 	"time"
-
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,6 +16,10 @@ import (
 
 const shutDownTimeOut = 10* time.Second
 func main(){
+	err := godotenv.Load()
+    if err != nil {
+        logrus.Warn("No .env file found")
+    }
 	done:= make(chan os.Signal, 1)
 
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM )
