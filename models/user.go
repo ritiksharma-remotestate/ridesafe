@@ -9,6 +9,7 @@ const(
 	RoleAdmin Role = "admin"
 	RoleUser Role="user"
 	RoleDriver Role="driver"
+	
 )
 
 func (r Role) IsValid() bool{

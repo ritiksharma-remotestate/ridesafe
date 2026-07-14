@@ -1,6 +1,18 @@
 package models
 
 import "time"
+type RideStatus string
+
+const (
+	RideRequested RideStatus = "REQUESTED"
+	RideAccepted  RideStatus = "ACCEPTED"
+	RideArrived   RideStatus = "ARRIVED"
+	RideStarted   RideStatus = "STARTED"
+	RideCompleted RideStatus = "COMPLETED"
+	RideCancelled RideStatus = "CANCELLED"
+)
+
+
 
 type Ride struct {
 	ID string `db:"id" json:"id"`

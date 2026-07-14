@@ -1,8 +1,9 @@
-package respository
+package repository
 
 import (
 	"ridesafe/database"
 	"ridesafe/models"
+	"database/sql"
 )
 
 func RegisterUser(user models.User) (*models.User,error){
