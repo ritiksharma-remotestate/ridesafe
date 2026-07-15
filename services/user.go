@@ -3,15 +3,15 @@ package services
 import (
 	"database/sql"
 	"errors"
-
+	"ridesafe/error_custom"
 	"golang.org/x/crypto/bcrypt"
-
+	
 	"ridesafe/models"
 	"ridesafe/repository"
 	"ridesafe/utils"
 )
 
-func RegisterUser(user models.User) (*models.User, error) {
+func RegisterUser(user models.RegisterRequest) (*models.User, error) {
 
 	exists, err := repository.IsUserExists(user.Email)
 	if err != nil {
@@ -19,19 +19,19 @@ func RegisterUser(user models.User) (*models.User, error) {
 	}
 
 	if exists {
-		return nil, errors.New("email already exists")
+		return nil, error_custom.ErrUserAlreadyExists 
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword(
-		[]byte(user.HashedPassword),
-		bcrypt.DefaultCost,
-	)
-
+	// hashedPassword, err := bcrypt.GenerateFromPassword(
+	// 	[]byte(user.Password),
+	// 	bcrypt.DefaultCost,
+	// )
+hashedPassword,err:=utils.HashPassword(user.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	user.HashedPassword = string(hashedPassword)
+	user.Password = string(hashedPassword)
 
 	newUser, err := repository.RegisterUser(user)
 
@@ -48,7 +48,7 @@ func Login(email string, password string) (string, error) {
 
     if err != nil {
     if errors.Is(err, sql.ErrNoRows) {
-        return "", ErrInvalidCredentials
+        return "", error_custom.ErrInvalidCredentials
     }
     return "", err
 }
@@ -60,11 +60,11 @@ func Login(email string, password string) (string, error) {
     )
 
     if err != nil {
-        return "", errors.New("invalid credentials")
+        return "", error_custom.ErrInvalidCredentials
     }
 
 
-    token, err := utils.JwtTokenCreate(user.ID,user.Name,email,)
+    token, err := utils.JwtTokenCreate(user.ID,user.Name,email,user.Role)
 
     if err != nil {
         return "", err
@@ -78,7 +78,7 @@ func GetUserProfile(userID string) (*models.User, error) {
 	user, err := repository.GetUserByID(userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
+			return nil, error_custom.ErrUserNotFound
 		}
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import(
 	"ridesafe/models"
 	"ridesafe/database"
 	"time"
+	"github.com/jmoiron/sqlx"
 	
 )
 func CreateRide(ride models.Ride)(*models.Ride,error){
@@ -28,13 +29,13 @@ return &newRide,nil;
 
 
 
-func AcceptRide(rideID string,driverID string,acceptedAt time.Time,status models.RideStatus,
+func AcceptRide(db sqlx.Ext,rideID string,driverID string,acceptedAt time.Time,status models.RideStatus,
 	) error{
 		 SQL:=`UPDATE rides SET driver_id = $1, accepted_at = $2, status = $3 WHERE id = $4;`
 		
 		
 		
-		_,err := database.Ridesafe.Exec(SQL, driverID, acceptedAt, status, rideID)
+		_,err := db.Exec(SQL, driverID, acceptedAt, status, rideID)
 			if err != nil {
 			return  err
 					}
@@ -61,6 +62,7 @@ func StartRide( rideID string, started_at time.Time, status models.RideStatus,
 	}
 
 func CompleteRide(
+		db sqlx.Ext,
 		rideID string,
 		
 		completed_at time.Time,
@@ -75,7 +77,7 @@ func CompleteRide(
 			
 			
 			
-			_,err := database.Ridesafe.Exec(
+			_,err := db.Exec(
 				
 				SQL,
 				
@@ -90,6 +92,7 @@ func CompleteRide(
 			return nil;
 		}
 		func CancelRide(
+			db sqlx.Ext,
 			rideID string,
 			
 			cancelled_at time.Time,
@@ -104,7 +107,7 @@ func CompleteRide(
 				
 				
 				
-				_,err := database.Ridesafe.Exec(
+				_,err := db.Exec(
 					
 					SQL,
 					

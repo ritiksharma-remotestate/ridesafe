@@ -4,16 +4,23 @@ import (
 	"ridesafe/database"
 	"ridesafe/models"
 	"database/sql"
+	
 )
 
-func RegisterUser(user models.User) (*models.User,error){
+func RegisterUser(user models.RegisterRequest) (*models.User,error){
 	 SQL:=`insert into users (name,email,hashed_password,role)
-	 values ($1,$2,$3,$4) returning *`
+	 values ($1,$2,$3,$4) RETURNING id,
+    name,
+    email,
+    hashed_password,
+    role,
+    created_at,
+    updated_at`
 
 	 var createdUser models.User
 
 	 err:=database.Ridesafe.Get(
-		&createdUser,SQL,user.Name,user.Email,user.HashedPassword,user.Role,
+		&createdUser,SQL,user.Name,user.Email,user.Password,user.Role,
 	 )
 	 return &createdUser,err
 
@@ -30,7 +37,7 @@ func GetUserByID(userID string) (*models.User,error){
 }
 
 func GetUserByEmail(Email string) (*models.User,error){
-	SQL:=`Select  id, name,email,role from users where email=$1 and archived_at is NULL`
+	SQL:=`Select  id, name,email,role , hashed_password from users where email=$1 and archived_at is NULL`
 	var getUser models.User
 
 	err:= database.Ridesafe.Get(
@@ -55,35 +62,15 @@ func IsUserExists(email string) (bool, error) {
 		email,
 	)
 
-	if err != nil {
-		return false, err
-	}
+if err == sql.ErrNoRows {
+    return false, nil
+}
 
-	return true, nil
+if err != nil {
+    return false, err
+}
+
+return true, nil
 }
 
 
-func GetUserIDByPassword(email, password string) (string, error) {
-	SQL := `SELECT
-				u.id,
-       			u.password
-       		FROM
-				users u
-			WHERE
-				u.archived_at IS NULL
-				AND u.email = TRIM(LOWER($1))`
-	var userID string
-	var passwordHash string
-	err := database.Ridesafe.QueryRowx(SQL, email).Scan(&userID, &passwordHash)
-	if err != nil && err != sql.ErrNoRows {
-		return "", err
-	}
-	if err == sql.ErrNoRows {
-		return "", nil
-	}
-	// compare password
-	if passwordErr := utils.CheckPassword(password, passwordHash); passwordErr != nil {
-		return "", passwordErr
-	}
-	return userID, nil
-}

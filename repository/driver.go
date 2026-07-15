@@ -3,6 +3,7 @@ package repository
 import (
 	"ridesafe/database"
 	"ridesafe/models"
+	"github.com/jmoiron/sqlx"
 )
 
 func CreateDriver(userID string) error {
@@ -29,7 +30,7 @@ func GetDriverByUserID(userID string) (*models.Driver,error){
 	return &getDriver,err
 }
 
-func UpdateDriverLocation(userID string ,latitude ,longitude float64) error{
+func UpdateDriverLocation(userID string , latitude ,longitude float64) error{
 SQL:=`UPDATE Drivers SET current_latitude=$2 , current_longitude=$3 where user_id=$1 `
 _, err := database.Ridesafe.Exec(SQL, userID,latitude,longitude)
 	return err
@@ -42,9 +43,9 @@ _, err := database.Ridesafe.Exec(SQL, userID,online)
 	return err
 }
 
-func SetDriverAvailable(userID string,available bool)error{
+func SetDriverAvailable(db sqlx.Ext,userID string,available bool)error{
 	SQL:=`UPDATE Drivers SET is_available=$2 where user_id=$1 `
-_, err := database.Ridesafe.Exec(SQL, userID,available)
+_, err := db.Exec(SQL, userID,available)
 	return err
 }
 

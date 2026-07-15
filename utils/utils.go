@@ -18,17 +18,20 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/teris-io/shortid"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 )
 
 var generator *shortid.Shortid
-var jwtSecret = []byte("12345")
+
+
+var jwtSecret=[]byte(os.Getenv("JWT_SECRET"))
 
 const generatorSeed = 1000
 type Claims struct {
 	UserID string        `json:"user_id"`
 	Name   string        `json:"name"`
 	Email  string        `json:"email"`
-	Roles  []models.Role `json:"roles"`
+	Role  models.Role `json:"role"`
 
 	jwt.RegisteredClaims
 }
@@ -136,11 +139,12 @@ func HashString(toHash string)string{
 	return hex.EncodeToString((sha.Sum(nil)))
 }
 
-func JwtTokenCreate(userId,name,email string) (string,error){
+func JwtTokenCreate(userId,name,email string, role models.Role) (string,error){
 	claims:=Claims{
 		UserID: userId,
 		Name: name,
 		Email: email,
+		Role: role,
 
 
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -153,26 +157,7 @@ func JwtTokenCreate(userId,name,email string) (string,error){
 
 	return token.SignedString(jwtSecret)
 }
-func JwtRefreshTokenCreate(userId string) (string,time.Time,error){
-	expiry:=time.Now().Add(30 * 24 * time.Hour)
-	claims:=Claims{
-		UserID: userId,
 
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiry),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString(jwtSecret)
-	if err != nil {
-		return "", time.Time{}, err
-	}
-
-	return tokenString,expiry,nil
-}
 
 func ValidateToken(tokenString string) (*Claims, error) {
 

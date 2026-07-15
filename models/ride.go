@@ -6,8 +6,8 @@ type RideStatus string
 const (
 	RideRequested RideStatus = "REQUESTED"
 	RideAccepted  RideStatus = "ACCEPTED"
-	RideArrived   RideStatus = "ARRIVED"
-	RideStarted   RideStatus = "STARTED"
+	RideArrived   RideStatus = "DRIVER_ARRIVED"
+	RideStarted   RideStatus = "ONGOING"
 	RideCompleted RideStatus = "COMPLETED"
 	RideCancelled RideStatus = "CANCELLED"
 )

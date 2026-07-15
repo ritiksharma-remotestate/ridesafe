@@ -1,37 +1,52 @@
-package services 
+package services
 
-
-import(
-	"ridesafe/repository"
-	"ridesafe/models"
-	"time"
-	"ridesafe/database"
+import (
+	"database/sql"
 	"errors"
+	"ridesafe/database"
+	"ridesafe/error_custom"
+	"ridesafe/models"
+	"ridesafe/repository"
 	"ridesafe/utils"
-	
+	"time"
 
+	"github.com/jmoiron/sqlx"
 )
-func CreateRide(ride models.ride)(*models.Ride,error){
-	user,err:=repository.GetUserByID(ride.PassengerID)
-	if err!=nil{
-		return nil, ErrUserNotFound
+
+var (
+	tx *sqlx.DB
+)
+func CreateRide(passengerID string, req models.CreateRideRequest) (*models.Ride, error) {
+
+	user, err := repository.GetUserByID(passengerID)
+	if err != nil {
+		return nil, error_custom.ErrUserNotFound
 	}
-	if models.Role(user.Role) != models.RoleUser {
-		return nil,ErrNotAPassenger
+
+	if user.Role != models.RolePassenger {
+		return nil, error_custom.ErrNotAPassenger
 	}
-	//  can check if ther is any active ridess going on 
 
 	distance := utils.CalculateDistance(
-    ride.PickupLatitude,
-    ride.PickupLongitude,
-    ride.DestinationLatitude,
-    ride.DestinationLongitude,
-)
+		req.PickupLatitude,
+		req.PickupLongitude,
+		req.DestinationLatitude,
+		req.DestinationLongitude,
+	)
 
-ride.Fare = utils.CalculateFare(distance)
+	fare := utils.CalculateFare(distance)
 
-ride.Status = models.RideRequested
-	ride.RequestedAt = time.Now()
+	ride := models.Ride{
+		PassengerID:          passengerID,
+		PickupLatitude:       req.PickupLatitude,
+		PickupLongitude:      req.PickupLongitude,
+		DestinationLatitude:  req.DestinationLatitude,
+		DestinationLongitude: req.DestinationLongitude,
+
+		Fare:        &fare,
+		Status:      string(models.RideRequested),
+		RequestedAt: time.Now(),
+	}
 
 	newRide, err := repository.CreateRide(ride)
 	if err != nil {
@@ -41,49 +56,51 @@ ride.Status = models.RideRequested
 	return newRide, nil
 }
 
-func AcceptRide(rideID string,driverID string) error{
+func AcceptRide(rideID string, driverID string) error {
 
-		ride,err:=repository.GetRideByID(rideID)
-		if err!=nil{
-			return ErrNotARide
+	ride, err := repository.GetRideByID(rideID)
+	if err != nil {
+		return error_custom.ErrRideNotFound
+	}
+	if models.RideStatus(ride.Status) != models.RideRequested {
+		return error_custom.ErrDriverAlreadyExists
+	}
+
+	driver, err := repository.GetDriverByUserID(driverID)
+	if err != nil {
+		return error_custom.ErrNotADriver
+	}
+
+	if !driver.IsOnline {
+		return error_custom.ErrDriverOffline
+	}
+	if !driver.IsAvailable {
+		return error_custom.ErrDriverUnavailable
+	}
+
+	return database.Tx(func(tx *sqlx.Tx) error {
+
+		err := repository.AcceptRide(tx,
+			rideID,
+			driverID,
+			time.Now(),
+			models.RideAccepted,
+		)
+		if err != nil {
+			return err
 		}
-		if models.RideStatus(ride.Status)!=models.RideRequested{
-			return ErrDriverAlreadyExists}
 
-		driver,err:=repository.GetDriverByuserID(driverID)
-		if err!=nil{
-			return ErrNotADriver
+		err = repository.SetDriverAvailable(
+			tx,
+			driverID,
+			false,
+		)
+		if err != nil {
+			return err
 		}
 
-		if !driver.IsOnline{
-			return ErrDriverAlreadyExists}
-        if !driver.IsAvailable{
-			return ErrDriverAlreadyExists}
-
-
-		 return database.Tx(func(tx *sqlx.Tx) error {
-
-        err := repository.AcceptRide(tx,
-            rideID,
-            driverID,
-            time.Now(),
-            models.RideAccepted,
-        )
-        if err != nil {
-            return err
-        }
-
-        err = repository.SetDriverAvailable(
-            tx,
-            driverID,
-            false,
-        )
-        if err != nil {
-            return err
-        }
-
-        return nil
-    })
+		return nil
+	})
 }
 
 func StartRide(rideID, driverID string) error {
@@ -91,19 +108,18 @@ func StartRide(rideID, driverID string) error {
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrRideNotFound
+			return error_custom.ErrRideNotFound
 		}
 		return err
 	}
 
 	if models.RideStatus(ride.Status) != models.RideAccepted {
-		return ErrRideNotAccepted
+		return error_custom.ErrRideNotAccepted
 	}
 
 	if ride.DriverID == nil || *ride.DriverID != driverID {
-		return ErrUnauthorizedDriver
+		return error_custom.ErrUnauthorizedDriver
 	}
-
 
 	err = repository.StartRide(
 		rideID,
@@ -115,7 +131,7 @@ func StartRide(rideID, driverID string) error {
 	}
 
 	return nil
-	
+
 }
 
 func CompleteRide(rideID, driverID string) error {
@@ -123,94 +139,110 @@ func CompleteRide(rideID, driverID string) error {
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrRideNotFound
+			return error_custom.ErrRideNotFound
 		}
 		return err
 	}
 
 	if models.RideStatus(ride.Status) != models.RideStarted {
-		return ErrRideNotStarted
+		return error_custom.ErrRideNotStarted
 	}
 
 	if ride.DriverID == nil || *ride.DriverID != driverID {
-		return ErrUnauthorizedDriver
+		return error_custom.ErrUnauthorizedDriver
 	}
 	return database.Tx(func(tx *sqlx.Tx) error {
 
-	err = repository.CompleteRide(
-		tx,
-		rideID,
-		time.Now(),
-		models.RideCompleted,
-	)
-	if err != nil {
-		return err
-	}
+		err = repository.CompleteRide(
+			tx,
+			rideID,
+			time.Now(),
+			models.RideCompleted,
+		)
+		if err != nil {
+			return err
+		}
 
-	err = repository.SetDriverAvailable(tx,driverID, true)
-	if err != nil {
-		return err
-	}
+		err = repository.SetDriverAvailable(tx, driverID, true)
+		if err != nil {
+			return err
+		}
 
-	return nil
-})
+		return nil
+	})
 }
-func CancelRide(rideID string) error {
+func CancelRide(rideID string,userID string,role models.Role) error {
 
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrRideNotFound
+			return error_custom.ErrRideNotFound
 		}
 		return err
 	}
+	if role == models.RolePassenger {
+    if ride.PassengerID != userID {
+        return error_custom.ErrUnauthorized
+    }
+}
+
+if role == models.RoleDriver {
+    if ride.DriverID == nil || *ride.DriverID != userID {
+        return error_custom.ErrUnauthorized
+    }
+}
+
+
+
+
+
+
 
 	if models.RideStatus(ride.Status) == models.RideCompleted {
-		return ErrRideAlreadyCompleted
+		return error_custom.ErrRideAlreadyCompleted
 	}
 
 	if models.RideStatus(ride.Status) == models.RideCancelled {
-		return ErrRideAlreadyCancelled
+		return error_custom.ErrRideAlreadyCancelled
 	}
 	return database.Tx(func(tx *sqlx.Tx) error {
-	err = repository.CancelRide(
-		tx,
-		rideID,
-		time.Now(),
-		models.RideCancelled,
-	)
-	if err != nil {
-		return err
-	}
-
-	if ride.DriverID != nil {
-		err = repository.SetDriverAvailable(tx,*ride.DriverID, true)
+		err = repository.CancelRide(
+			tx,
+			rideID,
+			time.Now(),
+			models.RideCancelled,
+		)
 		if err != nil {
 			return err
 		}
-	}
 
-	return nil
-})
+		if ride.DriverID != nil {
+			err = repository.SetDriverAvailable(tx, *ride.DriverID, true)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
-
 
 func MarkRideArrived(rideID, driverID string) error {
 
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrRideNotFound
+			return error_custom.ErrRideNotFound
 		}
 		return err
 	}
 
-	if ride.Status != models.RideAccepted {
-		return ErrRideNotAccepted
+	if models.RideStatus(ride.Status) != models.RideAccepted {
+		return error_custom.ErrRideNotAccepted
 	}
 
 	if ride.DriverID == nil || *ride.DriverID != driverID {
-		return ErrUnauthorizedDriver
+		return error_custom.ErrUnauthorizedDriver
 	}
 
 	err = repository.MarkRideArrived(
@@ -224,4 +256,3 @@ func MarkRideArrived(rideID, driverID string) error {
 
 	return nil
 }
-

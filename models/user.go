@@ -5,15 +5,14 @@ type Role string
 
 
 
-const(
-	RoleAdmin Role = "admin"
-	RoleUser Role="user"
-	RoleDriver Role="driver"
-	
+const (
+    RoleAdmin     Role = "ADMIN"
+    RolePassenger Role = "PASSENGER"
+    RoleDriver    Role = "DRIVER"
 )
 
 func (r Role) IsValid() bool{
-	return r==RoleAdmin || r== RoleUser || r==RoleDriver 
+	return r==RoleAdmin || r== RolePassenger || r==RoleDriver 
 
 }
 type User struct {
@@ -21,7 +20,7 @@ type User struct {
 	Name           string    `db:"name" json:"name"`
 	Email          string    `db:"email" json:"email"`
 	HashedPassword string    `db:"hashed_password" json:"-"`
-	Role           string    `db:"role" json:"role"`
+	Role           Role    `db:"role" json:"role"`
 	CreatedAt      time.Time `db:"created_at"`
 	UpdatedAt      time.Time `db:"updated_at"`
 }

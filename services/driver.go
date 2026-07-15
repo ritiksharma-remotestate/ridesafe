@@ -1,28 +1,30 @@
 package services
 
-import(
-	"ridesafe/repository"
+import (
 	"database/sql"
-	
 	"errors"
+	"ridesafe/database"
+	"ridesafe/error_custom"
 	"ridesafe/models"
+	"ridesafe/repository"
 )
+
 func CreateDriver(userID string)error{
 
 user,err:= repository.GetUserByID(userID)
 if err!=nil{
 	if errors.Is(err,sql.ErrNoRows){
-		return ErrUserNotFound
+		return error_custom.ErrUserNotFound
 	}
 	return err
 }
 if models.Role(user.Role) != models.RoleDriver {
-		return ErrNotADriver
+		return error_custom.ErrNotADriver
 	}
 
 	driver, err := repository.GetDriverByUserID(userID)
 	if err == nil && driver != nil {
-		return ErrDriverAlreadyExists
+		return error_custom.ErrDriverAlreadyExists
 	}
 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -41,7 +43,7 @@ func GetDriverByUserID(userID string)(*models.Driver,error){
 	driver,err:=repository.GetDriverByUserID(userID)
 	if err!=nil{
 	if errors.Is(err,sql.ErrNoRows){
-		return ErrUserNotFound
+		return nil,error_custom.ErrUserNotFound
 	}
 	return nil,err
 
@@ -53,7 +55,7 @@ func UpdateDriverLocation(userID string,latitude,longitude float64 ) error{
 	_,err:=repository.GetDriverByUserID(userID)
 	if err!=nil{
 	if errors.Is(err,sql.ErrNoRows){
-		return ErrUserNotFound
+		return error_custom.ErrUserNotFound
 	}
 	return err
 
@@ -74,7 +76,7 @@ func DriverOnline(userID string,online bool)error{
 	_,err:=repository.GetDriverByUserID(userID)
 	if err!=nil{
 	if errors.Is(err,sql.ErrNoRows){
-		return ErrUserNotFound
+		return error_custom.ErrUserNotFound
 	}
 	return err
 	}
@@ -90,12 +92,12 @@ func DriverAvailable(userID string,available bool)error{
 	_,err:=repository.GetDriverByUserID(userID)
 	if err!=nil{
 	if errors.Is(err,sql.ErrNoRows){
-		return ErrUserNotFound
+		return error_custom.ErrUserNotFound
 	}
 	return err
 }
 
-	err=repository.SetDriverAvailable(userID,available)
+	err=repository.SetDriverAvailable(database.Ridesafe,userID,available)
 	if err!=nil{
 		return err
 	}
