@@ -76,7 +76,7 @@ func ClaimsContext(r *http.Request) *utils.Claims {
 	return claims
 }
 
-func ShouldHaveRole(role models.Role) func(http.Handler) http.
+func ShouldHaveRole(roles ...models.Role) func(http.Handler) http.
 	Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -86,14 +86,11 @@ func ShouldHaveRole(role models.Role) func(http.Handler) http.
 				return
 			}
 
-			if claims.Role != role {
-				utils.RespondError(
-					w,
-					http.StatusForbidden,
-					nil,
-					"forbidden",
-				)
-				return
+			for _, role := range roles {
+				if claims.Role == role {
+					next.ServeHTTP(w, r)
+					return
+				}
 			}
 
 			next.ServeHTTP(w, r)

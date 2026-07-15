@@ -55,15 +55,15 @@ func CreateRide(w http.ResponseWriter, r *http.Request) {
 
 func AcceptRide(w http.ResponseWriter, r *http.Request) {
 	rideID := r.PathValue("id")
-	if err := utils.ParseBody(r.Body, &rideID); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
-		return
-	}
+	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
+	// 	utils.RespondError(
+	// 		w,
+	// 		http.StatusBadRequest,
+	// 		err,
+	// 		"failed to parse request body",
+	// 	)
+	// 	return
+	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -104,15 +104,15 @@ func ArriveRide(w http.ResponseWriter, r *http.Request) {
 
 	// rideID:=r.PathValue("id")
 	rideID := r.PathValue("id")
-	if err := utils.ParseBody(r.Body, &rideID); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
-		return
-	}
+	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
+	// 	utils.RespondError(
+	// 		w,
+	// 		http.StatusBadRequest,
+	// 		err,
+	// 		"failed to parse request body",
+	// 	)
+	// 	return
+	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -137,15 +137,15 @@ func ArriveRide(w http.ResponseWriter, r *http.Request) {
 func StartRide(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
-	if err := utils.ParseBody(r.Body, &rideID); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
-		return
-	}
+	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
+	// 	utils.RespondError(
+	// 		w,
+	// 		http.StatusBadRequest,
+	// 		err,
+	// 		"failed to parse request body",
+	// 	)
+	// 	return
+	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -170,15 +170,15 @@ func StartRide(w http.ResponseWriter, r *http.Request) {
 func CompleteRide(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
-	if err := utils.ParseBody(r.Body, &rideID); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
-		return
-	}
+	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
+	// 	utils.RespondError(
+	// 		w,
+	// 		http.StatusBadRequest,
+	// 		err,
+	// 		"failed to parse request body",
+	// 	)
+	// 	return
+	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -203,15 +203,15 @@ func CompleteRide(w http.ResponseWriter, r *http.Request) {
 func CancelRide(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
-	if err := utils.ParseBody(r.Body, &rideID); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
-		return
-	}
+	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
+	// 	utils.RespondError(
+	// 		w,
+	// 		http.StatusBadRequest,
+	// 		err,
+	// 		"failed to parse request body",
+	// 	)
+	// 	return
+	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {

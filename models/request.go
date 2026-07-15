@@ -32,3 +32,7 @@ type CreateRideRequest struct {
 	DestinationLatitude  float64 `json:"destination_latitude" validate:"required"`
 	DestinationLongitude float64 `json:"destination_longitude" validate:"required"`
 }
+type AvailableDrivers struct{
+	PickupLatitude       float64 `json:"pickup_latitude" validate:"required"`
+	PickupLongitude      float64 `json:"pickup_longitude" validate:"required"`
+}

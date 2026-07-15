@@ -106,16 +106,36 @@ func DriverAvailable(userID string,available bool)error{
 
 }
 
-func GetAvailableDrivers() ([]models.Driver, error){
+func GetAvailableDrivers(rideID,userID string) ([]models.Driver, error){
 	
-	drivers,err:=repository.GetAvailableDrivers()
+	rideInfo,err:=repository.GetRideByID(rideID)
+	if err != nil {
+    return nil, err }
+	if rideInfo.PassengerID != userID {
+    return nil, error_custom.ErrUnauthorized
+}
+	latitude:=rideInfo.PickupLatitude
+	longitude:=rideInfo.PickupLongitude
+
+
+
+	drivers,err:=repository.GetAvailableDrivers(latitude,longitude)
 	if err!=nil{
 		return nil,err
 	}
 	return drivers,nil
 }
+func GetDriverLocation(userID string) (float64, float64, error) {
+	lat, lon, err := repository.GetDriverLocation(userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, 0, error_custom.ErrDriverLocationMissing
+		}
+		return 0, 0, err
+	}
 
-
+	return lat, lon, nil
+}
 
 
 
