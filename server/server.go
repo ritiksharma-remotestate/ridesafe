@@ -39,6 +39,14 @@ func SetupRoutes() *Server {
 
 
 	//  routes for driver protect3ed
+	mux.Handle(
+	"POST /rides/{id}/verify-otp",
+	middleware.AuthMiddleware(
+		middleware.ShouldHaveRole(models.RoleDriver)(
+			http.HandlerFunc(handlers.VerifyRideOTP),
+		),
+	),
+)
 	mux.Handle("POST /drivers", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.CreateDriver))))
 	mux.Handle("GET /drivers/me", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.GetMyDriverProfile))))
 	mux.Handle("PATCH /drivers/location", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.UpdateDriverLocation))))
@@ -48,8 +56,16 @@ func SetupRoutes() *Server {
 	mux.Handle("PATCH /rides/{id}/arrive", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.ArriveRide))))
 	mux.Handle("PATCH /rides/{id}/start", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.StartRide))))
 	mux.Handle("PATCH /rides/{id}/complete", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.CompleteRide))))
+	mux.Handle(
+    "PATCH /rides/{id}/verify-otp",
+    middleware.AuthMiddleware(
+        middleware.ShouldHaveRole(models.RoleDriver)(
+            http.HandlerFunc(handlers.VerifyRideOTP),
+        ),
+    ),
+)
 	//   routes for passengers 
-	mux.Handle("POST /drivers/available", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.GetAvailableDrivers))))
+	mux.Handle("GET /rides/{id}/drivers-available", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.GetAvailableDrivers))))
 	mux.Handle("POST /rides", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.CreateRide))))
 	mux.Handle("GET /location", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.GetDriverLocation))))
 	// routes for both passenger and driver

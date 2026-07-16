@@ -36,3 +36,6 @@ type AvailableDrivers struct{
 	PickupLatitude       float64 `json:"pickup_latitude" validate:"required"`
 	PickupLongitude      float64 `json:"pickup_longitude" validate:"required"`
 }
+type VerifyOTPRequest struct {
+	OTP string `json:"otp" validate:"required,len=4,numeric"`
+}

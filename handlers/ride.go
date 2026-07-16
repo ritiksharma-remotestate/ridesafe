@@ -238,3 +238,95 @@ func GetRideByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // func GetMyRides(w http.ResponseWriter, r *http.Request)
+func VerifyRideOTP(w http.ResponseWriter, r *http.Request) {
+
+	var req models.VerifyOTPRequest
+
+	if err := utils.ParseBody(r.Body, &req); err != nil {
+		utils.RespondError(
+			w,
+			http.StatusBadRequest,
+			err,
+			"failed to parse request",
+		)
+		return
+	}
+
+	if errs := utils.CheckValidation(req); errs != nil {
+		utils.RespondError(
+			w,
+			http.StatusBadRequest,
+			nil,
+			"invalid request",
+			errs.Error(),
+		)
+		return
+	}
+
+	user := middlewares.ClaimsContext(r)
+	if user == nil {
+		utils.RespondError(
+			w,
+			http.StatusUnauthorized,
+			nil,
+			"user not authenticated",
+		)
+		return
+	}
+
+	rideID := r.PathValue("id")
+
+	err := services.VerifyRideOTP(
+		rideID,
+		user.UserID,
+		req.OTP,
+	)
+
+	if err != nil {
+
+		switch {
+
+		case errors.Is(err, error_custom.ErrRideNotFound):
+			utils.RespondError(
+				w,
+				http.StatusNotFound,
+				err,
+				"ride not found",
+			)
+
+		case errors.Is(err, error_custom.ErrUnauthorizedDriver):
+			utils.RespondError(
+				w,
+				http.StatusForbidden,
+				err,
+				"unauthorized driver",
+			)
+
+		case errors.Is(err, error_custom.ErrInvalidOTP):
+			utils.RespondError(
+				w,
+				http.StatusBadRequest,
+				err,
+				"invalid otp",
+			)
+
+		default:
+			utils.RespondError(
+				w,
+				http.StatusInternalServerError,
+				err,
+				"internal server error",
+			)
+		}
+
+		return
+	}
+
+	utils.RespondJSON(
+		w,
+		http.StatusOK,
+		map[string]string{
+			"message": "OTP verified successfully",
+		},
+	)
+}

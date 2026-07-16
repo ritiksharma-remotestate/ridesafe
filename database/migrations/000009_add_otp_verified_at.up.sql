@@ -1,0 +1,2 @@
+ALTER TABLE rides
+ADD COLUMN otp_verified_at TIMESTAMP WITH TIME ZONE;

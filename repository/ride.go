@@ -5,6 +5,7 @@ import(
 	"ridesafe/models"
 	"ridesafe/database"
 	"time"
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	
 )
@@ -13,7 +14,27 @@ func CreateRide(ride models.Ride)(*models.Ride,error){
 )
 VALUES ( $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING *;`
+RETURNING 
+id,
+passenger_id,
+driver_id,
+pickup_latitude,
+pickup_longitude,
+destination_latitude,
+destination_longitude,
+fare,
+status,
+requested_at,
+accepted_at,
+arrived_at,
+started_at,
+completed_at,
+cancelled_at,
+ride_otp_hash,
+ride_otp_generated_at,
+
+created_at,
+updated_at;`
 
 var newRide models.Ride
 
@@ -41,6 +62,7 @@ func AcceptRide(db sqlx.Ext,rideID string,driverID string,acceptedAt time.Time,s
 					}
 		return nil;
 		}
+
 
 
 
@@ -167,12 +189,16 @@ func GetRideByID(rideID string) (*models.Ride, error) {
 			fare,
 			status,
 			requested_at,
+			otp_verified_at,
 			accepted_at,
 			arrived_at,
 			started_at,
 			completed_at,
 			cancelled_at,
 			created_at,
+			ride_otp_hash,
+ride_otp_generated_at,
+start_otp,
 			updated_at
 		FROM rides
 		WHERE id = $1
@@ -234,3 +260,67 @@ func GetRideByID(rideID string) (*models.Ride, error) {
 				}
 				*/
 				
+func SaveRideOTP(
+	rideID string,
+	otp string,
+	arrivedAt time.Time,
+	status models.RideStatus,
+) error {
+
+	SQL := `
+	UPDATE rides
+	SET 
+		start_otp = $1,
+		ride_otp_generated_at = $2,
+		arrived_at = $3,
+		status = $4
+	WHERE id = $5
+	`
+
+	_, err := database.Ridesafe.Exec(
+		SQL,
+		otp,
+		time.Now(),
+		arrivedAt,
+		status,
+		rideID,
+	)
+
+	return err
+}
+
+func VerifyRideOTP(
+	rideID string,
+	otp string,
+) error {
+
+	query := `
+	UPDATE rides
+	SET
+		otp_verified_at = NOW()
+	WHERE
+		id = $1
+		AND start_otp = $2
+	`
+
+	result, err := database.Ridesafe.Exec(
+		query,
+		rideID,
+		otp,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

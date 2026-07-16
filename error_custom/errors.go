@@ -20,6 +20,8 @@ var (
 
 // Ride Error
 var (
+	ErrOTPNotVerified = errors.New("otp not verified")
+	ErrInvalidOTP = errors.New("invalid otp")
 	ErrRideNotFound          = errors.New("ride not found")
 	ErrRideAlreadyAccepted   = errors.New("ride has already been accepted")
 	ErrRideAlreadyStarted    = errors.New("ride has already started")

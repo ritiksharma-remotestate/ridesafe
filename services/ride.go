@@ -16,6 +16,7 @@ import (
 var (
 	tx *sqlx.DB
 )
+
 func CreateRide(passengerID string, req models.CreateRideRequest) (*models.Ride, error) {
 
 	user, err := repository.GetUserByID(passengerID)
@@ -120,6 +121,9 @@ func StartRide(rideID, driverID string) error {
 	if ride.DriverID == nil || *ride.DriverID != driverID {
 		return error_custom.ErrUnauthorizedDriver
 	}
+	if ride.OTPVerifiedAt == nil {
+		return error_custom.ErrOTPNotVerified
+	}
 
 	err = repository.StartRide(
 		rideID,
@@ -171,7 +175,7 @@ func CompleteRide(rideID, driverID string) error {
 		return nil
 	})
 }
-func CancelRide(rideID string,userID string,role models.Role) error {
+func CancelRide(rideID string, userID string, role models.Role) error {
 
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
@@ -181,22 +185,16 @@ func CancelRide(rideID string,userID string,role models.Role) error {
 		return err
 	}
 	if role == models.RolePassenger {
-    if ride.PassengerID != userID {
-        return error_custom.ErrUnauthorized
-    }
-}
+		if ride.PassengerID != userID {
+			return error_custom.ErrUnauthorized
+		}
+	}
 
-if role == models.RoleDriver {
-    if ride.DriverID == nil || *ride.DriverID != userID {
-        return error_custom.ErrUnauthorized
-    }
-}
-
-
-
-
-
-
+	if role == models.RoleDriver {
+		if ride.DriverID == nil || *ride.DriverID != userID {
+			return error_custom.ErrUnauthorized
+		}
+	}
 
 	if models.RideStatus(ride.Status) == models.RideCompleted {
 		return error_custom.ErrRideAlreadyCompleted
@@ -245,12 +243,54 @@ func MarkRideArrived(rideID, driverID string) error {
 		return error_custom.ErrUnauthorizedDriver
 	}
 
-	err = repository.MarkRideArrived(
+	otp, err := utils.GenerateOTP()
+	if err != nil {
+		return err
+	}
+
+	err = repository.SaveRideOTP(
 		rideID,
+		otp,
 		time.Now(),
 		models.RideArrived,
 	)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func VerifyRideOTP(
+	rideID string,
+	driverID string,
+	otp string,
+) error {
+
+	ride, err := repository.GetRideByID(rideID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return error_custom.ErrRideNotFound
+		}
+		return err
+	}
+
+	if ride.DriverID == nil || *ride.DriverID != driverID {
+		return error_custom.ErrUnauthorizedDriver
+	}
+
+	if models.RideStatus(ride.Status) != models.RideArrived {
+		return error_custom.ErrRideNotAccepted
+	}
+
+	err = repository.VerifyRideOTP(
+		rideID,
+		otp,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return error_custom.ErrInvalidOTP
+		}
 		return err
 	}
 

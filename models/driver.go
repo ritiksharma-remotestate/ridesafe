@@ -11,5 +11,6 @@ type Driver struct {
 	CurrentLongitude *float64  `db:"current_longitude" json:"current_longitude"`
 	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
+	 Distance float64 `db:"distance" json:"distance,omitempty"`
 }
 

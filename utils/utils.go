@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	
 	"io"
 	"math"
 	"ridesafe/models"
@@ -148,7 +149,7 @@ func JwtTokenCreate(userId,name,email string, role models.Role) (string,error){
 
 
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
@@ -210,4 +211,14 @@ func CalculateDistance (PickupLatitude, PickupLongitude, DestinationLatitude, De
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return EarthRadiusKm * c
+}
+func GenerateOTP() (string, error) {
+	max_num := big.NewInt(9000)
+
+	n, err := rand.Int(rand.Reader, max_num)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%04d", n.Int64()+1000), nil
 }

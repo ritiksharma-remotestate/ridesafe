@@ -1,0 +1,8 @@
+ALTER TABLE rides
+ADD COLUMN ride_otp_hash TEXT,
+
+ADD COLUMN ride_otp_generated_at TIMESTAMP WITH TIME ZONE,
+
+ADD COLUMN ride_otp_verified BOOLEAN NOT NULL DEFAULT FALSE,
+
+ADD COLUMN ride_otp_attempts INT NOT NULL DEFAULT 0;
