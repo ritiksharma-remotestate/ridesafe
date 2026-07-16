@@ -9,16 +9,16 @@ import (
 	"ridesafe/repository"
 )
 
-func CreateDriver(userID string)error{
+func CreateDriver(userID string) error {
 
-user,err:= repository.GetUserByID(userID)
-if err!=nil{
-	if errors.Is(err,sql.ErrNoRows){
-		return error_custom.ErrUserNotFound
+	user, err := repository.GetUserByID(userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return error_custom.ErrUserNotFound
+		}
+		return err
 	}
-	return err
-}
-if models.Role(user.Role) != models.RoleDriver {
+	if models.Role(user.Role) != models.RoleDriver {
 		return error_custom.ErrNotADriver
 	}
 
@@ -39,91 +39,85 @@ if models.Role(user.Role) != models.RoleDriver {
 	return nil
 }
 
-func GetDriverByUserID(userID string)(*models.Driver,error){
-	driver,err:=repository.GetDriverByUserID(userID)
-	if err!=nil{
-	if errors.Is(err,sql.ErrNoRows){
-		return nil,error_custom.ErrUserNotFound
-	}
-	return nil,err
-
-}
-return driver,nil
-
-}
-func UpdateDriverLocation(userID string,latitude,longitude float64 ) error{
-	_,err:=repository.GetDriverByUserID(userID)
-	if err!=nil{
-	if errors.Is(err,sql.ErrNoRows){
-		return error_custom.ErrUserNotFound
-	}
-	return err
-
-}
-
-
-
-
-	err=repository.UpdateDriverLocation(userID,latitude,longitude)
-	if err!=nil{
-		return err
-	}
-	return nil
-
-}
-
-func DriverOnline(userID string,online bool)error{
-	_,err:=repository.GetDriverByUserID(userID)
-	if err!=nil{
-	if errors.Is(err,sql.ErrNoRows){
-		return error_custom.ErrUserNotFound
-	}
-	return err
-	}
-	err=repository.SetDriverOnline(userID,online)
-	if err!=nil{
-		return err
-	}
-	return nil
-
-
-}
-func DriverAvailable(userID string,available bool)error{
-	_,err:=repository.GetDriverByUserID(userID)
-	if err!=nil{
-	if errors.Is(err,sql.ErrNoRows){
-		return error_custom.ErrUserNotFound
-	}
-	return err
-}
-
-	err=repository.SetDriverAvailable(database.Ridesafe,userID,available)
-	if err!=nil{
-		return err
-	}
-	return nil
-
-
-}
-
-func GetAvailableDrivers(rideID,userID string) ([]models.Driver, error){
-	
-	rideInfo,err:=repository.GetRideByID(rideID)
+func GetDriverByUserID(userID string) (*models.Driver, error) {
+	driver, err := repository.GetDriverByUserID(userID)
 	if err != nil {
-    return nil, err }
-	if rideInfo.PassengerID != userID {
-    return nil, error_custom.ErrUnauthorized
-}
-	latitude:=rideInfo.PickupLatitude
-	longitude:=rideInfo.PickupLongitude
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, error_custom.ErrUserNotFound
+		}
+		return nil, err
 
-
-
-	drivers,err:=repository.GetAvailableDrivers(latitude,longitude)
-	if err!=nil{
-		return nil,err
 	}
-	return drivers,nil
+	return driver, nil
+
+}
+func UpdateDriverLocation(userID string, latitude, longitude float64) error {
+	_, err := repository.GetDriverByUserID(userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return error_custom.ErrUserNotFound
+		}
+		return err
+
+	}
+
+	err = repository.UpdateDriverLocation(userID, latitude, longitude)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func DriverOnline(userID string, online bool) error {
+	_, err := repository.GetDriverByUserID(userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return error_custom.ErrUserNotFound
+		}
+		return err
+	}
+	err = repository.SetDriverOnline(userID, online)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+func DriverAvailable(userID string, available bool) error {
+	_, err := repository.GetDriverByUserID(userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return error_custom.ErrUserNotFound
+		}
+		return err
+	}
+
+	err = repository.SetDriverAvailable(database.Ridesafe, userID, available)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func GetAvailableDrivers(rideID, userID string) ([]models.Driver, error) {
+
+	rideInfo, err := repository.GetRideByID(rideID)
+	if err != nil {
+		return nil, err
+	}
+	if rideInfo.PassengerID != userID {
+		return nil, error_custom.ErrUnauthorized
+	}
+	latitude := rideInfo.PickupLatitude
+	longitude := rideInfo.PickupLongitude
+
+	drivers, err := repository.GetAvailableDrivers(latitude, longitude)
+	if err != nil {
+		return nil, err
+	}
+	return drivers, nil
 }
 func GetDriverLocation(userID string) (float64, float64, error) {
 	lat, lon, err := repository.GetDriverLocation(userID)
@@ -136,10 +130,3 @@ func GetDriverLocation(userID string) (float64, float64, error) {
 
 	return lat, lon, nil
 }
-
-
-
-
-
-
-

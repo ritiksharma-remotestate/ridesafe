@@ -46,7 +46,7 @@ func CreateDriver(w http.ResponseWriter, r *http.Request) {
 func GetMyDriverProfile(w http.ResponseWriter, r *http.Request) {
 	claims := middlewares.ClaimsContext(r)
 	if claims == nil {
-		// unauthorized
+		utils.RespondError(w,http.StatusNotFound,nil,"user not found")
 		return
 	}
 
@@ -70,34 +70,18 @@ func UpdateDriverLocation(w http.ResponseWriter, r *http.Request) {
 	var req models.UpdateDriverLocationRequest
 
 	if err := utils.ParseBody(r.Body, &req); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
+		utils.RespondError(w, http.StatusBadRequest, err, "failed to parse request body",)
 		return
 	}
 
 	if errs := utils.CheckValidation(req); errs != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			nil,
-			"invalid request",
-			errs.Error(),
-		)
+		utils.RespondError( w, http.StatusBadRequest, nil, "invalid request", errs.Error(),)
 		return
 	}
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
-		utils.RespondError(
-			w,
-			http.StatusUnauthorized,
-			nil,
-			"user not authenticated",
-		)
+		utils.RespondError( w, http.StatusUnauthorized, nil, "user not authenticated",)
 		return
 	}
 	err := services.UpdateDriverLocation(user.UserID, req.Latitude, req.Longitude)
@@ -120,28 +104,19 @@ func UpdateDriverLocation(w http.ResponseWriter, r *http.Request) {
 func SetDriverOnline(w http.ResponseWriter, r *http.Request) {
 	var status models.DriverOnlineRequest
 	if err := utils.ParseBody(r.Body, &status); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
+		utils.RespondError( w, http.StatusBadRequest, err, "failed to parse request body",
 		)
 		return
 	}
 
 	if errs := utils.CheckValidation(status); errs != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			nil,
-			"invalid request",
-			errs.Error(),
+		utils.RespondError( w, http.StatusBadRequest, nil, "invalid request", errs.Error(),
 		)
 		return
 	}
 	claims := middlewares.ClaimsContext(r)
 	if claims == nil {
-		// unauthorized
+		utils.RespondError(w,http.StatusUnauthorized,nil,"unauthorized user")
 		return
 	}
 
@@ -174,23 +149,12 @@ func SetDriverAvailable(w http.ResponseWriter, r *http.Request) {
 
 	driverID := claims.UserID
 	if err := utils.ParseBody(r.Body, &status); err != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			err,
-			"failed to parse request body",
-		)
+		utils.RespondError( w, http.StatusBadRequest, err, "failed to parse request body",)
 		return
 	}
 
 	if errs := utils.CheckValidation(status); errs != nil {
-		utils.RespondError(
-			w,
-			http.StatusBadRequest,
-			nil,
-			"invalid request",
-			errs.Error(),
-		)
+		utils.RespondError( w, http.StatusBadRequest, nil, "invalid request", errs.Error(),)
 		return
 	}
 	// driverCTX:=middlewares.ClaimsContext(r)
@@ -215,31 +179,17 @@ func GetAvailableDrivers(w http.ResponseWriter, r *http.Request) {
 	rideID:= r.PathValue("id")
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
-		utils.RespondError(
-			w,
-			http.StatusUnauthorized,
-			nil,
-			"user not authenticated",
-		)
+		utils.RespondError( w, http.StatusUnauthorized, nil, "user not authenticated",)
 		return
 	}
 
 	drivers, err := services.GetAvailableDrivers(rideID,user.UserID)
 	if err != nil {
-		utils.RespondError(
-			w,
-			http.StatusInternalServerError,
-			err,
-			"failed to fetch available drivers",
-		)
+		utils.RespondError(w,http.StatusInternalServerError,err,"failed to fetch available drivers",)
 		return
 	}
 
-	utils.RespondJSON(
-		w,
-		http.StatusOK,
-		drivers,
-	)
+	utils.RespondJSON(w,http.StatusOK,drivers,)
 }
 
 func GetDriverLocation(w http.ResponseWriter, r *http.Request) {
@@ -247,12 +197,7 @@ func GetDriverLocation(w http.ResponseWriter, r *http.Request) {
 
 	lat, lon, err := services.GetDriverLocation(driverID)
 	if err != nil {
-		utils.RespondError(
-			w,
-			http.StatusInternalServerError,
-			err,
-			"failed to fetch driver location",
-		)
+		utils.RespondError(w,http.StatusInternalServerError,err,"failed to fetch driver location",)
 		return
 	}
 

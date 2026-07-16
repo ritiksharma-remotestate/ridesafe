@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
+	
 	"ridesafe/database"
 	"ridesafe/error_custom"
 	"ridesafe/models"
@@ -28,12 +29,7 @@ func CreateRide(passengerID string, req models.CreateRideRequest) (*models.Ride,
 		return nil, error_custom.ErrNotAPassenger
 	}
 
-	distance := utils.CalculateDistance(
-		req.PickupLatitude,
-		req.PickupLongitude,
-		req.DestinationLatitude,
-		req.DestinationLongitude,
-	)
+	distance := utils.CalculateDistance(req.PickupLatitude,req.PickupLongitude,req.DestinationLatitude,req.DestinationLongitude,)
 
 	fare := utils.CalculateFare(distance)
 
@@ -43,7 +39,6 @@ func CreateRide(passengerID string, req models.CreateRideRequest) (*models.Ride,
 		PickupLongitude:      req.PickupLongitude,
 		DestinationLatitude:  req.DestinationLatitude,
 		DestinationLongitude: req.DestinationLongitude,
-
 		Fare:        &fare,
 		Status:      string(models.RideRequested),
 		RequestedAt: time.Now(),
@@ -81,21 +76,12 @@ func AcceptRide(rideID string, driverID string) error {
 
 	return database.Tx(func(tx *sqlx.Tx) error {
 
-		err := repository.AcceptRide(tx,
-			rideID,
-			driverID,
-			time.Now(),
-			models.RideAccepted,
-		)
+		err := repository.AcceptRide(tx,rideID,driverID,time.Now(),models.RideAccepted,)
 		if err != nil {
 			return err
 		}
 
-		err = repository.SetDriverAvailable(
-			tx,
-			driverID,
-			false,
-		)
+		err = repository.SetDriverAvailable(tx,driverID,false,)
 		if err != nil {
 			return err
 		}
@@ -125,11 +111,7 @@ func StartRide(rideID, driverID string) error {
 		return error_custom.ErrOTPNotVerified
 	}
 
-	err = repository.StartRide(
-		rideID,
-		time.Now(),
-		models.RideStarted,
-	)
+	err = repository.StartRide(rideID,time.Now(),models.RideStarted,)
 	if err != nil {
 		return err
 	}
@@ -157,12 +139,7 @@ func CompleteRide(rideID, driverID string) error {
 	}
 	return database.Tx(func(tx *sqlx.Tx) error {
 
-		err = repository.CompleteRide(
-			tx,
-			rideID,
-			time.Now(),
-			models.RideCompleted,
-		)
+		err = repository.CompleteRide(tx,rideID,time.Now(),models.RideCompleted,)
 		if err != nil {
 			return err
 		}
@@ -204,12 +181,7 @@ func CancelRide(rideID string, userID string, role models.Role) error {
 		return error_custom.ErrRideAlreadyCancelled
 	}
 	return database.Tx(func(tx *sqlx.Tx) error {
-		err = repository.CancelRide(
-			tx,
-			rideID,
-			time.Now(),
-			models.RideCancelled,
-		)
+		err = repository.CancelRide(tx,rideID,time.Now(),models.RideCancelled,)
 		if err != nil {
 			return err
 		}
@@ -248,23 +220,14 @@ func MarkRideArrived(rideID, driverID string) error {
 		return err
 	}
 
-	err = repository.SaveRideOTP(
-		rideID,
-		otp,
-		time.Now(),
-		models.RideArrived,
-	)
+	err = repository.SaveRideOTP(rideID,otp,time.Now(),models.RideArrived,)
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-func VerifyRideOTP(
-	rideID string,
-	driverID string,
-	otp string,
-) error {
+func VerifyRideOTP(rideID string,driverID string,otp string) error {
 
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
@@ -282,10 +245,7 @@ func VerifyRideOTP(
 		return error_custom.ErrRideNotAccepted
 	}
 
-	err = repository.VerifyRideOTP(
-		rideID,
-		otp,
-	)
+	err = repository.VerifyRideOTP(rideID,otp)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -295,4 +255,29 @@ func VerifyRideOTP(
 	}
 
 	return nil
+}
+
+func GetRideByID(rideID string, userID string, role models.Role) (*models.Ride,error){
+
+	ride, err := repository.GetRideByID(rideID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil,error_custom.ErrRideNotFound
+		}
+		return nil,err
+	}
+	if role == models.RolePassenger {
+		if ride.PassengerID != userID {
+			return nil,error_custom.ErrUnauthorized
+		}
+	}
+	
+	if role == models.RoleDriver {
+		if ride.DriverID == nil || *ride.DriverID != userID {
+			return nil,error_custom.ErrUnauthorized
+		}
+	}
+
+	return ride,nil
+	
 }

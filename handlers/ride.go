@@ -6,6 +6,7 @@ import (
 	"ridesafe/error_custom"
 	middlewares "ridesafe/middleware"
 	"ridesafe/models"
+	
 
 	"ridesafe/services"
 	"ridesafe/utils"
@@ -234,6 +235,32 @@ func CancelRide(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRideByID(w http.ResponseWriter, r *http.Request) {
+	rideID := r.PathValue("id")
+	user := middlewares.ClaimsContext(r)
+	if user == nil {
+		utils.RespondError(
+			w,
+			http.StatusUnauthorized,
+			nil,
+			"user not authenticated",
+		)
+		return
+	}
+	ride,err:=services.GetRideByID(rideID,user.UserID,user.Role)
+	if err != nil {
+		utils.RespondError(
+			w,
+			http.StatusNotFound,
+			nil,
+			"ride not found",
+		)
+		return
+	}
+	utils.RespondJSON(
+		w,
+		http.StatusOK,
+		ride,
+	)
 
 }
 
@@ -276,11 +303,7 @@ func VerifyRideOTP(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
 
-	err := services.VerifyRideOTP(
-		rideID,
-		user.UserID,
-		req.OTP,
-	)
+	err := services.VerifyRideOTP( rideID, user.UserID, req.OTP)
 
 	if err != nil {
 

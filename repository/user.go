@@ -9,13 +9,7 @@ import (
 
 func RegisterUser(user models.RegisterRequest) (*models.User,error){
 	 SQL:=`insert into users (name,email,hashed_password,role)
-	 values ($1,$2,$3,$4) RETURNING id,
-    name,
-    email,
-    hashed_password,
-    role,
-    created_at,
-    updated_at`
+	 values ($1,$2,$3,$4) RETURNING id, name, email, hashed_password, role, created_at, updated_at`
 
 	 var createdUser models.User
 
@@ -47,20 +41,11 @@ func GetUserByEmail(Email string) (*models.User,error){
 }
 
 func IsUserExists(email string) (bool, error) {
-	query := `
-		SELECT 1
-		FROM users
-		WHERE email=$1
-		LIMIT 1
-	`
+	SQL := `SELECT 1 FROM users WHERE email=$1 LIMIT 1`
 
 	var result int
 
-	err := database.Ridesafe.Get(
-		&result,
-		query,
-		email,
-	)
+	err := database.Ridesafe.Get(&result,SQL,email)
 
 if err == sql.ErrNoRows {
     return false, nil

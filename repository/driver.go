@@ -7,12 +7,9 @@ import (
 )
 
 func CreateDriver(userID string) error {
-	query := `
-		INSERT INTO drivers (user_id)
-		VALUES ($1)
-	`
+	SQL := `INSERT INTO drivers (user_id) VALUES ($1)`
 
-	_, err := database.Ridesafe.Exec(query, userID)
+	_, err := database.Ridesafe.Exec(SQL, userID)
 	if err != nil {
 		return err
 	}
@@ -30,13 +27,9 @@ func GetDriverByUserID(userID string) (*models.Driver,error){
 	return &getDriver,err
 }
 func GetDriverLocation(userID string) (float64, float64, error) {
-	query := `
-		SELECT current_latitude, current_longitude
-		FROM drivers
-		WHERE user_id = $1
-	`
+	SQL := ` SELECT current_latitude, current_longitude FROM drivers WHERE user_id = $1 `
 	var lat, lon float64
-	err := database.Ridesafe.QueryRow(query, userID).Scan(&lat, &lon)
+	err := database.Ridesafe.QueryRow(SQL, userID).Scan(&lat, &lon)
 	if err != nil {
 		return 0, 0, err
 	}
