@@ -34,8 +34,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 
 		if authHeader == "" {
-			
-		utils.RespondError(w, http.StatusUnauthorized,nil,"missing auth header")
+
+			utils.RespondError(w, http.StatusUnauthorized, nil, "missing auth header")
 			return
 		}
 
@@ -51,14 +51,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
-			
-		utils.RespondError(w, http.StatusUnauthorized,err,"invalid token")
+
+			utils.RespondError(w, http.StatusUnauthorized, err, "invalid token")
 			return
 		}
 		user, err := repository.GetUserByID(claims.UserID)
 		if err != nil || user == nil {
-			
-		utils.RespondError(w, http.StatusNotFound,err,"user not found")
+
+			utils.RespondError(w, http.StatusNotFound, err, "user not found")
 			return
 		}
 
@@ -94,7 +94,7 @@ func ShouldHaveRole(roles ...models.Role) func(http.Handler) http.
 			}
 
 			next.ServeHTTP(w, r)
-
+			// utils.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
 		})
 
 	}
