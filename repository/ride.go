@@ -103,3 +103,46 @@ func VerifyRideOTP(rideID string, otp string) error {
 	}
 	return nil
 }
+func GetRideByIDForUpdate(tx sqlx.Ext, rideID string) (*models.Ride, error) {
+	SQL := `
+		SELECT id, passenger_id, driver_id, pickup_latitude, pickup_longitude,
+		       destination_latitude, destination_longitude, fare, status,
+		       requested_at, otp_verified_at, accepted_at, arrived_at, started_at,
+		       completed_at, cancelled_at, created_at, ride_otp_hash,
+		       ride_otp_generated_at, started_otp, updated_at
+		FROM rides
+		WHERE id = $1
+		FOR UPDATE`
+
+	var ride models.Ride
+	err := sqlx.Get(tx, &ride, SQL, rideID)
+	if err != nil {
+		return nil, err
+	}
+	return &ride, nil
+}
+func GetOTPAttempts(rideID string) (int, error) {
+	SQL := `SELECT ride_otp_attempts FROM rides WHERE id = $1`
+	var attempts int
+	err := database.Ridesafe.Get(&attempts, SQL, rideID)
+	if err != nil {
+		return 0, err
+	}
+	return attempts, nil
+}
+
+func IncrementOTPAttempts(rideID string) (int, error) {
+	SQL := `UPDATE rides SET ride_otp_attempts = ride_otp_attempts + 1 WHERE id = $1 RETURNING ride_otp_attempts`
+	var attempts int
+	err := database.Ridesafe.Get(&attempts, SQL, rideID)
+	if err != nil {
+		return 0, err
+	}
+	return attempts, nil
+}
+
+func ResetOTPAttempts(rideID string) error {
+	SQL := `UPDATE rides SET ride_otp_attempts = 0 WHERE id = $1`
+	_, err := database.Ridesafe.Exec(SQL, rideID)
+	return err
+}

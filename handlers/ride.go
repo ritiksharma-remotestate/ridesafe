@@ -284,7 +284,13 @@ func VerifyRideOTP(w http.ResponseWriter, r *http.Request) {
 				err,
 				"invalid otp",
 			)
-
+		case errors.Is(err, error_custom.ErrTooManyOTPAttempts):
+			utils.RespondError(
+				w,
+				http.StatusTooManyRequests,
+				err,
+				"too many incorrect otp attempts, please request a new ride or contact support",
+			)
 		default:
 			utils.RespondError(
 				w,

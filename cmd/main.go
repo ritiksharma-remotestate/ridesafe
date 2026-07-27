@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"ridesafe/database"
 	"ridesafe/server"
+	"ridesafe/utils"
 	"syscall"
 	"time"
 
@@ -20,6 +21,7 @@ func main() {
 	if err != nil {
 		logrus.Warn("No .env file found")
 	}
+	utils.InitJWTSecret()
 	done := make(chan os.Signal, 1)
 
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

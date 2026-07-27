@@ -4,12 +4,12 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"io"
 	"math"
 	"math/big"
 	"net/http"
-	"os"
 	"ridesafe/models"
 	"strings"
 	"time"
@@ -23,7 +23,7 @@ import (
 
 var generator *shortid.Shortid
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var jwtSecret []byte
 
 const generatorSeed = 1000
 
@@ -63,7 +63,9 @@ func init() {
 
 	generator = g
 }
-
+func InitJWTSecret() {
+	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+}
 func ParseBody(body io.Reader, out any) error {
 	err := json.NewDecoder(body).Decode(out)
 	if err != nil {

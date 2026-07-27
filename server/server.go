@@ -42,7 +42,7 @@ func SetupRoutes() *Server {
 	//   routes for passengers
 	mux.Handle("GET /rides/{id}/drivers-available", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetAvailableDrivers), models.RolePassenger)))
 	mux.Handle("POST /rides", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.CreateRide), models.RolePassenger)))
-	mux.Handle("GET /location", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetDriverLocation), models.RolePassenger)))
+	mux.Handle("GET /drivers/{id}/location", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetDriverLocation), models.RolePassenger)))
 	// routes for both passenger and driver
 	mux.Handle("GET /rides/{id}", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetRideByID), models.RolePassenger, models.RoleDriver)))
 	mux.Handle("PATCH /rides/{id}/cancel", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.CancelRide), models.RolePassenger, models.RoleDriver)))
