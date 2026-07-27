@@ -7,22 +7,15 @@ import (
 	"ridesafe/error_custom"
 	"ridesafe/models"
 	"ridesafe/repository"
+	"ridesafe/utils"
 )
 
-func CreateDriver(userID string) error {
-
-	user, err := repository.GetUserByID(userID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return error_custom.ErrUserNotFound
-		}
-		return err
-	}
+func CreateDriver(user *utils.Claims) error {
 	if models.Role(user.Role) != models.RoleDriver {
 		return error_custom.ErrNotADriver
 	}
 
-	driver, err := repository.GetDriverByUserID(userID)
+	driver, err := repository.GetDriverByUserID(user.UserID)
 	if err == nil && driver != nil {
 		return error_custom.ErrDriverAlreadyExists
 	}
@@ -31,7 +24,7 @@ func CreateDriver(userID string) error {
 		return err
 	}
 
-	err = repository.CreateDriver(userID)
+	err = repository.CreateDriver(user.UserID)
 	if err != nil {
 		return err
 	}
@@ -51,6 +44,7 @@ func GetDriverByUserID(userID string) (*models.Driver, error) {
 	return driver, nil
 
 }
+
 func UpdateDriverLocation(userID string, latitude, longitude float64) error {
 	_, err := repository.GetDriverByUserID(userID)
 	if err != nil {
@@ -68,7 +62,6 @@ func UpdateDriverLocation(userID string, latitude, longitude float64) error {
 	return nil
 
 }
-
 func DriverOnline(userID string, online bool) error {
 	_, err := repository.GetDriverByUserID(userID)
 	if err != nil {

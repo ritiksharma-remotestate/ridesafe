@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"ridesafe/error_custom"
 	middlewares "ridesafe/middleware"
 	"ridesafe/models"
-	
 
 	"ridesafe/services"
 	"ridesafe/utils"
@@ -56,16 +56,7 @@ func CreateRide(w http.ResponseWriter, r *http.Request) {
 
 func AcceptRide(w http.ResponseWriter, r *http.Request) {
 	rideID := r.PathValue("id")
-	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
-	// 	utils.RespondError(
-	// 		w,
-	// 		http.StatusBadRequest,
-	// 		err,
-	// 		"failed to parse request body",
-	// 	)
-	// 	return
-	// }
-
+	fmt.Println(rideID)
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
 		utils.RespondError(
@@ -103,17 +94,7 @@ func AcceptRide(w http.ResponseWriter, r *http.Request) {
 
 func ArriveRide(w http.ResponseWriter, r *http.Request) {
 
-	// rideID:=r.PathValue("id")
 	rideID := r.PathValue("id")
-	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
-	// 	utils.RespondError(
-	// 		w,
-	// 		http.StatusBadRequest,
-	// 		err,
-	// 		"failed to parse request body",
-	// 	)
-	// 	return
-	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -125,28 +106,19 @@ func ArriveRide(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	err := services.MarkRideArrived(rideID, user.UserID)
+	otp, err := services.MarkRideArrived(rideID, user.UserID)
 	if err != nil {
-		utils.RespondError(w, http.StatusNotFound, err, "failed to update")
+		utils.RespondError(w, http.StatusNotFound, err, "failed to mark ride arrived")
 		return
 	}
 
-	utils.RespondJSON(w, http.StatusOK, "ride arrived")
+	utils.RespondJSON(w, http.StatusOK, otp)
 
 }
 
 func StartRide(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
-	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
-	// 	utils.RespondError(
-	// 		w,
-	// 		http.StatusBadRequest,
-	// 		err,
-	// 		"failed to parse request body",
-	// 	)
-	// 	return
-	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -171,15 +143,6 @@ func StartRide(w http.ResponseWriter, r *http.Request) {
 func CompleteRide(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
-	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
-	// 	utils.RespondError(
-	// 		w,
-	// 		http.StatusBadRequest,
-	// 		err,
-	// 		"failed to parse request body",
-	// 	)
-	// 	return
-	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -204,15 +167,6 @@ func CompleteRide(w http.ResponseWriter, r *http.Request) {
 func CancelRide(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
-	// if err := utils.ParseBody(r.Body, &rideID); err != nil {
-	// 	utils.RespondError(
-	// 		w,
-	// 		http.StatusBadRequest,
-	// 		err,
-	// 		"failed to parse request body",
-	// 	)
-	// 	return
-	// }
 
 	user := middlewares.ClaimsContext(r)
 	if user == nil {
@@ -246,7 +200,7 @@ func GetRideByID(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	ride,err:=services.GetRideByID(rideID,user.UserID,user.Role)
+	ride, err := services.GetRideByID(rideID, user.UserID, user.Role)
 	if err != nil {
 		utils.RespondError(
 			w,
@@ -263,8 +217,6 @@ func GetRideByID(w http.ResponseWriter, r *http.Request) {
 	)
 
 }
-
-// func GetMyRides(w http.ResponseWriter, r *http.Request)
 func VerifyRideOTP(w http.ResponseWriter, r *http.Request) {
 
 	var req models.VerifyOTPRequest
@@ -303,7 +255,7 @@ func VerifyRideOTP(w http.ResponseWriter, r *http.Request) {
 
 	rideID := r.PathValue("id")
 
-	err := services.VerifyRideOTP( rideID, user.UserID, req.OTP)
+	err := services.VerifyRideOTP(rideID, user.UserID, req.OTP)
 
 	if err != nil {
 

@@ -2,37 +2,36 @@ package utils
 
 import (
 	"crypto/rand"
-	"crypto/sha512"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	
+
 	"io"
 	"math"
-	"ridesafe/models"
 	"math/big"
 	"net/http"
+	"os"
+	"ridesafe/models"
 	"strings"
 	"time"
-	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/teris-io/shortid"
 	"golang.org/x/crypto/bcrypt"
-	"os"
 )
 
 var generator *shortid.Shortid
 
-
-var jwtSecret=[]byte(os.Getenv("JWT_SECRET"))
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 const generatorSeed = 1000
+
 type Claims struct {
-	UserID string        `json:"user_id"`
-	Name   string        `json:"name"`
-	Email  string        `json:"email"`
-	Role  models.Role `json:"role"`
+	UserID string      `json:"user_id"`
+	Name   string      `json:"name"`
+	Email  string      `json:"email"`
+	Role   models.Role `json:"role"`
 
 	jwt.RegisteredClaims
 }
@@ -48,6 +47,7 @@ type clientError struct {
 	StatusCode    int    `json:"statusCode"`
 	IsClientError bool   `json:"isClientError"`
 }
+
 func init() {
 	n, err := rand.Int(rand.Reader, big.NewInt(generatorSeed))
 	if err != nil {
@@ -64,7 +64,7 @@ func init() {
 	generator = g
 }
 
-func ParseBody(body io.Reader, out interface{}) error {
+func ParseBody(body io.Reader, out any) error {
 	err := json.NewDecoder(body).Decode(out)
 	if err != nil {
 		return err
@@ -72,11 +72,11 @@ func ParseBody(body io.Reader, out interface{}) error {
 	return nil
 }
 
-func EncodeJSONBody(resp http.ResponseWriter, data interface{}) error {
+func EncodeJSONBody(resp http.ResponseWriter, data any) error {
 	return json.NewEncoder(resp).Encode(data)
 }
 
-func RespondJSON(w http.ResponseWriter, statusCode int, body interface{}) {
+func RespondJSON(w http.ResponseWriter, statusCode int, body any) {
 	w.WriteHeader(statusCode)
 	if body != nil {
 		if err := EncodeJSONBody(w, body); err != nil {
@@ -115,7 +115,7 @@ func RespondError(w http.ResponseWriter, statusCode int, err error, messageToUse
 	}
 }
 
-func CheckValidation(i interface{}) validator.ValidationErrors {
+func CheckValidation(i any) validator.ValidationErrors {
 	v := validator.New()
 	err := v.Struct(i)
 	if err == nil {
@@ -131,22 +131,17 @@ func HashPassword(password string) (string, error) {
 	}
 	return string(hashedPassword), nil
 }
-func CheckPassword(password string , hashedPassword string) error{
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword),[]byte(password))
-}
-func HashString(toHash string)string{
-	sha:=sha512.New()
-	sha.Write([]byte(toHash))
-	return hex.EncodeToString((sha.Sum(nil)))
+
+func CheckPassword(password string, hashedPassword string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func JwtTokenCreate(userId,name,email string, role models.Role) (string,error){
-	claims:=Claims{
+func JwtTokenCreate(userId, name, email string, role models.Role) (string, error) {
+	claims := Claims{
 		UserID: userId,
-		Name: name,
-		Email: email,
-		Role: role,
-
+		Name:   name,
+		Email:  email,
+		Role:   role,
 
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
@@ -159,13 +154,15 @@ func JwtTokenCreate(userId,name,email string, role models.Role) (string,error){
 	return token.SignedString(jwtSecret)
 }
 
-
 func ValidateToken(tokenString string) (*Claims, error) {
 
 	token, err := jwt.ParseWithClaims(
+
 		tokenString,
+
 		&Claims{},
-		func(token *jwt.Token) (interface{}, error) {
+
+		func(token *jwt.Token) (any, error) {
 
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method")
@@ -188,12 +185,12 @@ func ValidateToken(tokenString string) (*Claims, error) {
 
 }
 
-func CalculateFare( distance float64)float64{
-	fare:= distance*12
+func CalculateFare(distance float64) float64 {
+	fare := distance * 12
 	return fare
 }
-//  we hv multipe distance finding formula out of which i chose haversine formula coz of its preciseness and simple mathematical equation
-func CalculateDistance (PickupLatitude, PickupLongitude, DestinationLatitude, DestinationLongitude float64)float64{
+
+func CalculateDistance(PickupLatitude, PickupLongitude, DestinationLatitude, DestinationLongitude float64) float64 {
 	const EarthRadiusKm = 6371.0
 
 	lat1Rad := PickupLatitude * math.Pi / 180
@@ -213,9 +210,9 @@ func CalculateDistance (PickupLatitude, PickupLongitude, DestinationLatitude, De
 	return EarthRadiusKm * c
 }
 func GenerateOTP() (string, error) {
-	max_num := big.NewInt(9000)
+	maxNum := big.NewInt(9000)
 
-	n, err := rand.Int(rand.Reader, max_num)
+	n, err := rand.Int(rand.Reader, maxNum)
 	if err != nil {
 		return "", err
 	}

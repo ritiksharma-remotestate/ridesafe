@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 
@@ -20,7 +22,7 @@ CREATE TYPE ride_status AS ENUM (
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE ,
+    email TEXT NOT NULL UNIQUE,
     hashed_password TEXT NOT NULL,
     role role_type NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

@@ -14,13 +14,12 @@ import (
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.RegisterRequest
-	err := json.NewDecoder(r.Body).Decode(&user)
+
+	err := json.NewDecoder(r.Body).Decode(&user) // utils.paeseBody()
 	if err != nil {
-		http.Error(w, "invalid requestbody", http.StatusBadRequest)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	// w.WriteHeader(http.StatusOK)
-	// json.NewEncoder(w).Encode(req)nnknknkn
 
 	if errs := utils.CheckValidation(user); errs != nil {
 		utils.RespondError(w, http.StatusBadRequest, nil, "invalid request", errs.Error())
@@ -50,13 +49,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "invalid requestbody", http.StatusBadRequest)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	if errs := utils.CheckValidation(req); errs != nil {
 		utils.RespondError(w, http.StatusBadRequest, nil, "invalid request", errs.Error())
-
 		return
 	}
 	//  iknow this users struct is unnecessary but i already wrote code using it so i am not removing for now
@@ -64,15 +62,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	token, err := services.Login(req.Email, req.Password)
 
 	if err != nil {
-    switch {
-    case errors.Is(err, error_custom.ErrInvalidCredentials):
-        utils.RespondError(w, http.StatusUnauthorized, err, "invalid email or password")
-
-    default:
-        utils.RespondError(w, http.StatusInternalServerError, err, "failed to login")
-    }
-    return
-}
+		switch {
+		case errors.Is(err, error_custom.ErrInvalidCredentials):
+			utils.RespondError(w, http.StatusUnauthorized, err, "invalid email or password")
+		default:
+			utils.RespondError(w, http.StatusInternalServerError, err, "failed to login")
+		}
+		return
+	}
 	utils.RespondJSON(w, http.StatusOK, struct {
 		Token string `json:"token"`
 	}{

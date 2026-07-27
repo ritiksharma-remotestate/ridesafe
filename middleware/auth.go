@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"ridesafe/models"
@@ -76,27 +77,24 @@ func ClaimsContext(r *http.Request) *utils.Claims {
 	return claims
 }
 
-func ShouldHaveRole(roles ...models.Role) func(http.Handler) http.
-	Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims := ClaimsContext(r)
-			if claims == nil {
-				utils.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+func ShouldHaveRole(next http.Handler, roles ...models.Role) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		claims := ClaimsContext(r)
+		if claims == nil {
+			utils.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+			return
+		}
+
+		for _, role := range roles {
+			fmt.Println(claims.Role, role)
+			if claims.Role == role {
+				next.ServeHTTP(w, r)
 				return
 			}
+		}
 
-			for _, role := range roles {
-				if claims.Role == role {
-					next.ServeHTTP(w, r)
-					return
-				}
-			}
-
-			next.ServeHTTP(w, r)
-			// utils.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
-		})
-
-	}
+		utils.RespondError(w, http.StatusForbidden, nil, "forbidden")
+	})
 
 }

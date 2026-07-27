@@ -11,7 +11,6 @@ import (
 )
 
 func RegisterUser(user models.RegisterRequest) (*models.User, error) {
-
 	exists, err := repository.IsUserExists(user.Email)
 	if err != nil {
 		return nil, err
@@ -40,7 +39,6 @@ func RegisterUser(user models.RegisterRequest) (*models.User, error) {
 func Login(email string, password string) (string, error) {
 
 	user, err := repository.GetUserByEmail(email)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", error_custom.ErrInvalidCredentials

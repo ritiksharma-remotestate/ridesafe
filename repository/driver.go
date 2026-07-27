@@ -3,6 +3,7 @@ package repository
 import (
 	"ridesafe/database"
 	"ridesafe/models"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -17,14 +18,14 @@ func CreateDriver(userID string) error {
 	return nil
 }
 
-func GetDriverByUserID(userID string) (*models.Driver,error){
-	SQL:=`select * from Drivers where user_id=$1`
+func GetDriverByUserID(userID string) (*models.Driver, error) {
+	SQL := `select * from Drivers where user_id=$1`
 	var getDriver models.Driver
 
-	err:= database.Ridesafe.Get(
-		&getDriver,SQL,userID,
+	err := database.Ridesafe.Get(
+		&getDriver, SQL, userID,
 	)
-	return &getDriver,err
+	return &getDriver, err
 }
 func GetDriverLocation(userID string) (float64, float64, error) {
 	SQL := ` SELECT current_latitude, current_longitude FROM drivers WHERE user_id = $1 `
@@ -36,22 +37,23 @@ func GetDriverLocation(userID string) (float64, float64, error) {
 
 	return lat, lon, nil
 }
-func UpdateDriverLocation(userID string , latitude ,longitude float64) error{
-SQL:=`UPDATE Drivers SET current_latitude=$2 , current_longitude=$3 where user_id=$1 `
-_, err := database.Ridesafe.Exec(SQL, userID,latitude,longitude)
+
+func UpdateDriverLocation(userID string, latitude, longitude float64) error {
+	SQL := `UPDATE Drivers SET current_latitude=$2 , current_longitude=$3 where user_id=$1 `
+	_, err := database.Ridesafe.Exec(SQL, userID, latitude, longitude)
 	return err
 
 }
 
-func SetDriverOnline(userID string,online bool)error{
-	SQL:=`UPDATE Drivers SET is_online=$2 where user_id=$1 `
-_, err := database.Ridesafe.Exec(SQL, userID,online)
+func SetDriverOnline(userID string, online bool) error {
+	SQL := `UPDATE Drivers SET is_online=$2 where user_id=$1 `
+	_, err := database.Ridesafe.Exec(SQL, userID, online)
 	return err
 }
 
-func SetDriverAvailable(db sqlx.Ext,userID string,available bool)error{
-	SQL:=`UPDATE Drivers SET is_available=$2 where user_id=$1 `
-_, err := db.Exec(SQL, userID,available)
+func SetDriverAvailable(db sqlx.Ext, userID string, available bool) error {
+	SQL := `UPDATE Drivers SET is_available=$2 where user_id=$1 `
+	_, err := db.Exec(SQL, userID, available)
 	return err
 }
 
@@ -87,5 +89,3 @@ func GetAvailableDrivers(latitude, longitude float64) ([]models.Driver, error) {
 
 	return drivers, nil
 }
-
-

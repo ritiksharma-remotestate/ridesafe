@@ -6,61 +6,62 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jmoiron/sqlx"
-	_"github.com/lib/pq"
-		"github.com/sirupsen/logrus"
+	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-var(
+var (
 	Ridesafe *sqlx.DB
 )
 
 type SSLMode string
- 
+
 const (
-	SSLModeEnable SSLMode="enable"
-	SSLModeDisable SSLMode="disable"
+	SSLModeEnable  SSLMode = "enable"
+	SSLModeDisable SSLMode = "disable"
 )
 
-func ConnectAndMigrate(host,port,databaseName,user,password string, sslmode SSLMode) error{
-	connStr:= fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",host,port,user,password,databaseName,sslmode)
-	DB,err:= sqlx.Open("postgres",connStr)
+func ConnectAndMigrate(host, port, databaseName, user, password string, sslmode string) error {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, databaseName, sslmode)
+	DB, err := sqlx.Open("postgres", connStr)
 
-	if err!= nil{
+	if err != nil {
 		return err
 	}
-	err=DB.Ping()
-	if err!=nil{
+	err = DB.Ping()
+	if err != nil {
 		return err
 	}
-	Ridesafe=DB
+	Ridesafe = DB
 	return migrateUp(DB)
 }
-func ShutdownDatabase() error{
 
+func ShutdownDatabase() error {
 	if Ridesafe != nil {
-    return Ridesafe.Close()
-}
-return nil
+		return Ridesafe.Close()
+	}
+	return nil
 }
 
-func migrateUp(db *sqlx.DB) error{
-	driver, err:= postgres.WithInstance(db.DB, &postgres.Config{})
+func migrateUp(db *sqlx.DB) error {
+	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 
-	if err!=nil{
+	if err != nil {
 		return err
 	}
-	m,err := migrate.NewWithDatabaseInstance("file://database/migrations","postgres",driver)
+	m, err := migrate.NewWithDatabaseInstance("file://database/migrations", "postgres", driver)
 
-if err!=nil{
+	if err != nil {
 		return err
 	}
-	if err:= m.Up(); err!= nil && err!= migrate.ErrNoChange{
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err
 	}
 	return nil
 }
+
 func Tx(fn func(tx *sqlx.Tx) error) error {
 	tx, err := Ridesafe.Beginx()
 	if err != nil {

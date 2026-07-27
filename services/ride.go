@@ -3,7 +3,8 @@ package services
 import (
 	"database/sql"
 	"errors"
-	
+	"fmt"
+
 	"ridesafe/database"
 	"ridesafe/error_custom"
 	"ridesafe/models"
@@ -56,6 +57,7 @@ func AcceptRide(rideID string, driverID string) error {
 
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
+		fmt.Print("60")
 		return error_custom.ErrRideNotFound
 	}
 	if models.RideStatus(ride.Status) != models.RideRequested {
@@ -100,7 +102,7 @@ func StartRide(rideID, driverID string) error {
 		return err
 	}
 
-	if models.RideStatus(ride.Status) != models.RideAccepted {
+	if models.RideStatus(ride.Status) != models.RideArrived {
 		return error_custom.ErrRideNotAccepted
 	}
 
@@ -112,6 +114,7 @@ func StartRide(rideID, driverID string) error {
 	}
 
 	err = repository.StartRide(rideID,time.Now(),models.RideStarted,)
+	
 	if err != nil {
 		return err
 	}
@@ -129,10 +132,14 @@ func CompleteRide(rideID, driverID string) error {
 		}
 		return err
 	}
+	if models.RideStatus(ride.Status) == models.RideCompleted {
+		return error_custom.ErrRideAlreadyCompleted
+	}
 
 	if models.RideStatus(ride.Status) != models.RideStarted {
 		return error_custom.ErrRideNotStarted
 	}
+
 
 	if ride.DriverID == nil || *ride.DriverID != driverID {
 		return error_custom.ErrUnauthorizedDriver
@@ -197,35 +204,35 @@ func CancelRide(rideID string, userID string, role models.Role) error {
 	})
 }
 
-func MarkRideArrived(rideID, driverID string) error {
+func MarkRideArrived(rideID, driverID string) (string,error) {
 
 	ride, err := repository.GetRideByID(rideID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return error_custom.ErrRideNotFound
+			return "",error_custom.ErrRideNotFound
 		}
-		return err
+		return "",err
 	}
 
 	if models.RideStatus(ride.Status) != models.RideAccepted {
-		return error_custom.ErrRideNotAccepted
+		return "",error_custom.ErrRideNotAccepted
 	}
 
 	if ride.DriverID == nil || *ride.DriverID != driverID {
-		return error_custom.ErrUnauthorizedDriver
+		return "",error_custom.ErrUnauthorizedDriver
 	}
 
 	otp, err := utils.GenerateOTP()
 	if err != nil {
-		return err
+		return "",err
 	}
 
 	err = repository.SaveRideOTP(rideID,otp,time.Now(),models.RideArrived,)
 	if err != nil {
-		return err
+		return "",err
 	}
 
-	return nil
+	return otp,nil
 }
 func VerifyRideOTP(rideID string,driverID string,otp string) error {
 

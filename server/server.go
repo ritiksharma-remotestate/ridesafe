@@ -9,9 +9,10 @@ import (
 	"ridesafe/models"
 	"time"
 )
+
 type Server struct {
-    Router *http.ServeMux
-    server *http.Server
+	Router *http.ServeMux
+	server *http.Server
 }
 
 const (
@@ -20,33 +21,31 @@ const (
 	writeTimeout      = 5 * time.Minute
 )
 
-
 func SetupRoutes() *Server {
 	mux := http.NewServeMux()
 	// Public Routes
 	mux.HandleFunc("POST /register", handlers.Register)
 	mux.HandleFunc("POST /login", handlers.Login)
 
-	//  routes for driver protect3ed
+	//  routes for driver protected
 
-	mux.Handle("POST /drivers", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.CreateDriver))))
-	mux.Handle("GET /drivers/me", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.GetMyDriverProfile))))
-	mux.Handle("PATCH /drivers/location", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.UpdateDriverLocation))))
-	mux.Handle("PATCH /drivers/online", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.SetDriverOnline))))
-	mux.Handle("PATCH /drivers/available", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.SetDriverAvailable))))
-	mux.Handle("PATCH /rides/{id}/accept", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.AcceptRide))))
-	mux.Handle("PATCH /rides/{id}/arrive", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.ArriveRide))))
-	mux.Handle("PATCH /rides/{id}/start", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.StartRide))))
-	mux.Handle("PATCH /rides/{id}/complete", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.CompleteRide))))
-	mux.Handle("PATCH /rides/{id}/verify-otp",middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RoleDriver)(http.HandlerFunc(handlers.VerifyRideOTP),),),
-)
-	//   routes for passengers 
-	mux.Handle("GET /rides/{id}/drivers-available", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.GetAvailableDrivers))))
-	mux.Handle("POST /rides", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.CreateRide))))
-	mux.Handle("GET /location", middleware.AuthMiddleware( middleware.ShouldHaveRole(models.RolePassenger)(http.HandlerFunc(handlers.GetDriverLocation))))
+	mux.Handle("POST /drivers", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.CreateDriver), models.RoleDriver)))
+	mux.Handle("GET /drivers/me", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetMyDriverProfile), models.RoleDriver)))
+	mux.Handle("PATCH /drivers/location", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.UpdateDriverLocation), models.RoleDriver)))
+	mux.Handle("PATCH /drivers/online", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.SetDriverOnline), models.RoleDriver)))
+	mux.Handle("PATCH /drivers/available", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.SetDriverAvailable), models.RoleDriver)))
+	mux.Handle("PATCH /rides/{id}/accept", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.AcceptRide), models.RoleDriver)))
+	mux.Handle("PATCH /rides/{id}/arrive", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.ArriveRide), models.RoleDriver)))
+	mux.Handle("PATCH /rides/{id}/start", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.StartRide), models.RoleDriver)))
+	mux.Handle("PATCH /rides/{id}/complete", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.CompleteRide), models.RoleDriver)))
+	mux.Handle("PATCH /rides/{id}/verify-otp", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.VerifyRideOTP), models.RoleDriver)))
+	//   routes for passengers
+	mux.Handle("GET /rides/{id}/drivers-available", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetAvailableDrivers), models.RolePassenger)))
+	mux.Handle("POST /rides", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.CreateRide), models.RolePassenger)))
+	mux.Handle("GET /location", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetDriverLocation), models.RolePassenger)))
 	// routes for both passenger and driver
-	mux.Handle("GET /rides/{id}", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RolePassenger,models.RoleDriver,)(http.HandlerFunc(handlers.GetRideByID))))
-	mux.Handle("PATCH /rides/{id}/cancel", middleware.AuthMiddleware(middleware.ShouldHaveRole(models.RolePassenger,models.RoleDriver,)(http.HandlerFunc(handlers.CancelRide))))
+	mux.Handle("GET /rides/{id}", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.GetRideByID), models.RolePassenger, models.RoleDriver)))
+	mux.Handle("PATCH /rides/{id}/cancel", middleware.AuthMiddleware(middleware.ShouldHaveRole(http.HandlerFunc(handlers.CancelRide), models.RolePassenger, models.RoleDriver)))
 
 	return &Server{
 		Router: mux,

@@ -2,9 +2,11 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"ridesafe/database"
 	"ridesafe/models"
 	"time"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -35,50 +37,40 @@ func AcceptRide(db sqlx.Ext, rideID string, driverID string, acceptedAt time.Tim
 
 func StartRide(rideID string, started_at time.Time, status models.RideStatus) error {
 	SQL := `UPDATE rides SET started_at= $1, status = $2 WHERE id = $3;`
-	_, err := database.Ridesafe.Exec(SQL, started_at,status,rideID)
+	_, err := database.Ridesafe.Exec(SQL, started_at, status, rideID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func CompleteRide( db sqlx.Ext, rideID string, completed_at time.Time, status models.RideStatus,) error {
+func CompleteRide(db sqlx.Ext, rideID string, completed_at time.Time, status models.RideStatus) error {
 	SQL := `UPDATE rides SET completed_at= $1, status = $2 WHERE id = $3;`
 
-	_, err := db.Exec( SQL, completed_at, status, rideID,)
+	_, err := db.Exec(SQL, completed_at, status, rideID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func CancelRide( db sqlx.Ext, rideID string, cancelled_at time.Time, status models.RideStatus,) error {
+func CancelRide(db sqlx.Ext, rideID string, cancelled_at time.Time, status models.RideStatus) error {
 	SQL := `UPDATE rides SET cancelled_at= $1, status = $2 WHERE id = $3;`
-	_, err := db.Exec( SQL, cancelled_at, status, rideID,)
+	_, err := db.Exec(SQL, cancelled_at, status, rideID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-
-func MarkRideArrived(rideID string, arrived_at time.Time, status models.RideStatus) error {
-	SQL := `UPDATE rides SET arrived_at= $1,status = $2WHERE id = $3;`
-
-	_, err := database.Ridesafe.Exec(SQL, arrived_at, status, rideID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetRideByID(rideID string) (*models.Ride, error) {
-	query := `
-		SELECT  id, passenger_id, driver_id, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, fare, status, requested_at, otp_verified_at, accepted_at, arrived_at, started_at, completed_at, cancelled_at, created_at, ride_otp_hash, ride_otp_generated_at, start_otp, updated_at FROM rides WHERE id = $1`
+	SQL := `
+		SELECT  id, passenger_id, driver_id, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, fare, status, requested_at, otp_verified_at, accepted_at, arrived_at, started_at, completed_at, cancelled_at, created_at, ride_otp_hash, ride_otp_generated_at, started_otp, updated_at FROM rides WHERE id = $1`
 
 	var ride models.Ride
 
-	err := database.Ridesafe.Get(&ride, query, rideID)
+	err := database.Ridesafe.Get(&ride, SQL, rideID)
 
 	if err != nil {
+		fmt.Println("inside repo", err)
 		return nil, err
 	}
 
@@ -87,9 +79,7 @@ func GetRideByID(rideID string) (*models.Ride, error) {
 
 func SaveRideOTP(rideID string, otp string, arrivedAt time.Time, status models.RideStatus) error {
 
-	SQL := `
-	UPDATE rides
-	SET  start_otp = $1, ride_otp_generated_at = $2, arrived_at = $3, status = $4 WHERE id = $5 `
+	SQL := ` UPDATE rides SET  started_otp = $1, ride_otp_generated_at = $2, arrived_at = $3, status = $4 WHERE id = $5 `
 
 	_, err := database.Ridesafe.Exec(SQL, otp, time.Now(), arrivedAt, status, rideID)
 
@@ -97,25 +87,19 @@ func SaveRideOTP(rideID string, otp string, arrivedAt time.Time, status models.R
 }
 
 func VerifyRideOTP(rideID string, otp string) error {
-
 	SQL := `
 	UPDATE rides
-	SET otp_verified_at = NOW() WHERE id = $1 AND start_otp = $2 `
-
-	result, err := database.Ridesafe.Exec(SQL, rideID, otp)
-
+	SET otp_verified_at = NOW(),ride_otp_verified = $1 WHERE id = $2 AND started_otp = $3 `
+	result, err := database.Ridesafe.Exec(SQL, true, rideID, otp)
 	if err != nil {
 		return err
 	}
-
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-
 	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
